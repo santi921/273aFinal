@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 
 
 def Makexyzdistance(t):
-    atoms_num = int(np.loadtxt(t, dtype=str, usecols=(0,), max_rows = 1))
+    atoms_num = int(np.loadtxt(t, dtype=str, usecols=(0,), max_rows=1))
     element = np.loadtxt(t, dtype=str, usecols=(0,), skiprows=2, max_rows=atoms_num)
     x = np.loadtxt(t, dtype=float, usecols=(1), skiprows=2, max_rows=atoms_num)
     y = np.loadtxt(t, dtype=float, usecols=(2), skiprows=2, max_rows=atoms_num)
@@ -257,7 +257,7 @@ class PersImage(TransformerMixin):
             ax.axis("off")
 
 
-from elements import ELEMENTS
+from utils.elements import ELEMENTS
 
 
 def VariancePersistv1(

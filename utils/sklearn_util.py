@@ -8,7 +8,6 @@ import numpy as np
 
 
 from sklearn.svm import SVR
-from sklearn.preprocessing import scale
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.neural_network import MLPRegressor
 from sklearn.linear_model import SGDRegressor, BayesianRidge
@@ -65,16 +64,16 @@ def sgd(x, y, scale):
         "stochastic gradient descent score:   " + str(score) + " time: " + str(time_el)
     )
 
-    score = str(mean_squared_error(reg.predict(x_test), y_test))
+    score = str(mean_squared_error(reg.predict(list(x_test)), y_test))
     print("MSE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(mean_absolute_error(reg.predict(x_test), y_test))
+    score = str(mean_absolute_error(reg.predict(list(x_test)), y_test))
     print("MAE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(r2_score(reg.predict(x_test), y_test))
+    score = str(r2_score(reg.predict(list(x_test)), y_test))
     print("r2 score:   " + str(score) + " time: " + str(time_el))
 
-    score_mae = mean_absolute_error(reg.predict(x_test), y_test)
+    score_mae = mean_absolute_error(reg.predict(list(x_test)), y_test)
     print("scaled MAE")
     print(scale * score_mae)
 
@@ -106,16 +105,16 @@ def gradient_boost_reg(x, y, scale):
         "gradient boost score:                " + str(score) + " time: " + str(time_el)
     )
 
-    score = str(mean_squared_error(reg.predict(x_test), y_test))
+    score = str(mean_squared_error(reg.predict(list(x_test)), y_test))
     print("MSE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(mean_absolute_error(reg.predict(x_test), y_test))
+    score = str(mean_absolute_error(reg.predict(list(x_test)), y_test))
     print("MAE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(r2_score(reg.predict(x_test), y_test))
+    score = str(r2_score(reg.predict(list(x_test)), y_test))
     print("r2 score:   " + str(score) + " time: " + str(time_el))
 
-    score_mae = mean_absolute_error(reg.predict(x_test), y_test)
+    score_mae = mean_absolute_error(reg.predict(list(x_test)), y_test)
     print("scaled MAE")
     print(scale * score_mae)
 
@@ -148,16 +147,16 @@ def random_forest(x, y, scale):
         "random forest score:                 " + str(score) + " time: " + str(time_el)
     )
 
-    score = str(mean_squared_error(reg.predict(x_test), y_test))
+    score = str(mean_squared_error(reg.predict(list(x_test)), y_test))
     print("MSE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(mean_absolute_error(reg.predict(x_test), y_test))
+    score = str(mean_absolute_error(reg.predict(list(x_test)), y_test))
     print("MAE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(r2_score(reg.predict(x_test), y_test))
+    score = str(r2_score(reg.predict(list(x_test)), y_test))
     print("r2 score:   " + str(score) + " time: " + str(time_el))
 
-    score_mae = mean_absolute_error(reg.predict(x_test), y_test)
+    score_mae = mean_absolute_error(reg.predict(list(x_test)), y_test)
     print("scaled MAE")
     print(scale * score_mae)
 
@@ -186,16 +185,16 @@ def extra_trees(x, y, scale):
     score = reg.score(list(x_test), y_test)
     print("Extra trees score:                 " + str(score) + " time: " + str(time_el))
 
-    score = str(mean_squared_error(reg.predict(x_test), y_test))
+    score = str(mean_squared_error(reg.predict(list(x_test)), y_test))
     print("MSE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(mean_absolute_error(reg.predict(x_test), y_test))
+    score = str(mean_absolute_error(reg.predict(list(x_test)), y_test))
     print("MAE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(r2_score(reg.predict(x_test), y_test))
+    score = str(r2_score(reg.predict(list(x_test)), y_test))
     print("r2 score:   " + str(score) + " time: " + str(time_el))
 
-    score_mae = mean_absolute_error(reg.predict(x_test), y_test)
+    score_mae = mean_absolute_error(reg.predict(list(x_test)), y_test)
     print("scaled MAE")
     print(scale * score_mae)
 
@@ -218,18 +217,19 @@ def gaussian(x, y, scale):
         "gaussian process score:              " + str(score) + " time: " + str(time_el)
     )
 
-    score = str(mean_squared_error(reg.predict(x_test), y_test))
+    score = str(mean_squared_error(reg.predict(list(x_test)), y_test))
     print("MSE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(mean_absolute_error(reg.predict(x_test), y_test))
+    score = str(mean_absolute_error(reg.predict(list(x_test)), y_test))
     print("MAE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(r2_score(reg.predict(x_test), y_test))
+    score = str(r2_score(reg.predict(list(x_test)), y_test))
     print("r2 score:   " + str(score) + " time: " + str(time_el))
 
-    score_mae = mean_absolute_error(reg.predict(x_test), y_test)
+    score_mae = mean_absolute_error(reg.predict(list(x_test)), y_test)
     print("scaled MAE")
     print(scale * score_mae)
+
     return reg
 
 
@@ -249,16 +249,16 @@ def kernel(x, y, scale):
         "kernel regression score:             " + str(score) + " time: " + str(time_el)
     )
 
-    score = str(mean_squared_error(reg.predict(x_test), y_test))
+    score = str(mean_squared_error(reg.predict(list(x_test)), y_test))
     print("MSE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(mean_absolute_error(reg.predict(x_test), y_test))
+    score = str(mean_absolute_error(reg.predict(list(x_test)), y_test))
     print("MAE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(r2_score(reg.predict(x_test), y_test))
+    score = str(r2_score(reg.predict(list(x_test)), y_test))
     print("r2 score:   " + str(score) + " time: " + str(time_el))
 
-    score_mae = mean_absolute_error(reg.predict(x_test), y_test)
+    score_mae = mean_absolute_error(reg.predict(list(x_test)), y_test)
     print("scaled MAE")
     print(scale * score_mae)
     return reg
@@ -288,16 +288,16 @@ def bayesian(x, y, scale):
         "bayesian score:                      " + str(score) + " time: " + str(time_el)
     )
 
-    score = str(mean_squared_error(reg.predict(x_test), y_test))
+    score = str(mean_squared_error(reg.predict(list(x_test)), y_test))
     print("MSE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(mean_absolute_error(reg.predict(x_test), y_test))
+    score = str(mean_absolute_error(reg.predict(list(x_test)), y_test))
     print("MAE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(r2_score(reg.predict(x_test), y_test))
+    score = str(r2_score(reg.predict(list(x_test)), y_test))
     print("r2 score:   " + str(score) + " time: " + str(time_el))
 
-    score_mae = mean_absolute_error(reg.predict(x_test), y_test)
+    score_mae = mean_absolute_error(reg.predict(list(x_test)), y_test)
     print("scaled MAE")
     print(scale * score_mae)
 
@@ -355,16 +355,16 @@ def svr(x, y, scale):
         + str(time_poly)
     )
 
-    score = str(mean_squared_error(svr_poly.predict(x_test), y_test))
+    score = str(mean_squared_error(svr_poly.predict(list(x_test)), y_test))
     print("MSE score:   " + str(score) + " time: " + str(time_poly))
 
-    score = str(mean_absolute_error(svr_poly.predict(x_test), y_test))
+    score = str(mean_absolute_error(svr_poly.predict(list(x_test)), y_test))
     print("MAE score:   " + str(score) + " time: " + str(time_poly))
 
-    score = str(r2_score(svr_poly.predict(x_test), y_test))
+    score = str(r2_score(svr_poly.predict(list(x_test)), y_test))
     print("r2 score:   " + str(score) + " time: " + str(time_poly))
 
-    score_mae = mean_absolute_error(svr_poly.predict(x_test), y_test)
+    score_mae = mean_absolute_error(svr_poly.predict(list(x_test)), y_test)
     print("scaled MAE")
     print(scale * score_mae)
 
@@ -400,16 +400,16 @@ def sk_nn(x, y, scale):
         "Neural Network score:                " + str(score) + " time: " + str(time_el)
     )
 
-    score = str(mean_squared_error(reg.predict(x_test), y_test))
+    score = str(mean_squared_error(reg.predict(list(x_test)), y_test))
     print("MSE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(mean_absolute_error(reg.predict(x_test), y_test))
+    score = str(mean_absolute_error(reg.predict(list(x_test)), y_test))
     print("MAE score:   " + str(score) + " time: " + str(time_el))
 
-    score = str(r2_score(reg.predict(x_test), y_test))
+    score = str(r2_score(reg.predict(list(x_test)), y_test))
     print("r2 score:   " + str(score) + " time: " + str(time_el))
 
-    score_mae = mean_absolute_error(reg.predict(x_test), y_test)
+    score_mae = mean_absolute_error(reg.predict(list(x_test)), y_test)
     print("scaled MAE")
     print(scale * score_mae)
 

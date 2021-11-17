@@ -68,6 +68,11 @@ if __name__ == "__main__":
     if dataset == "qm9":
         # todo: precompute full persistent and save??
         mat, target_val = qm9(ratio = ratio, desc = desc, target = target)
+
+        # here mat is a list of ndarrays, maybe stack them to (#_of_data, 2500)?
+        mat = np.vstack(mat)
+        target_val = np.vstack(target_val)
+
         scale = np.max(target_val) - np.min(target_val)
         target_val = (target_val - np.min(target_val)) / scale
         reg_model = calc(mat, target_val, scale, algo)
@@ -104,6 +109,12 @@ if __name__ == "__main__":
             HOMO_1 = df["HOMO-1"].to_numpy()
             diff = df["diff"].to_numpy()
             mat = df["mat"].to_numpy()
+
+        # here data is a ndarray in shape (581,) and each data[i] is ndarray with shape (2500,), prolly stack them into shape (581,2500)?
+        mat = np.vstack(mat)
+        HOMO = np.vstack(HOMO)
+        HOMO_1 = np.vstack(HOMO_1)
+        diff = np.vstack(diff)
 
         # scaling
         if target == 'homo':

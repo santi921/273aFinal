@@ -1,7 +1,9 @@
 import os
 import sys
-import pybel
+from openbabel import pybel
 import random
+import h5py
+import pandas as pd
 from tqdm import tqdm
 
 
@@ -47,28 +49,28 @@ def calc(x, y, scale, algo="sgd"):
         reg = gaussian(x, y, scale)
 
     elif algo == "tf_nn":
-        from tensorflow_util import nn_basic
+        from utils.tensorflow_util import nn_basic
 
         x = x.astype("float32")
         y = y.astype("float32")
 
         reg = nn_basic(x, y, scale)
     elif algo == "tf_cnn":
-        from tensorflow_util import cnn_basic
+        from utils.tensorflow_util import cnn_basic
 
         x = x.astype("float32")
         y = y.astype("float32")
 
         reg = cnn_basic(x, y, scale)
     elif algo == "tf_cnn_norm":
-        from tensorflow_util import cnn_norm_basic
+        from utils.tensorflow_util import cnn_norm_basic
 
         x = x.astype("float32")
         y = y.astype("float32")
 
         reg = cnn_norm_basic(x, y, scale)
     elif algo == "resnet":
-        from tensorflow_util import resnet34
+        from utils.tensorflow_util import resnet34
 
         x = x.astype("float32")
         y = y.astype("float32")
@@ -168,10 +170,27 @@ def qm9(ratio=0.01, desc="morg", target="HOMO"):
     else:
         print("invalid target specified")
 
+    # try to load precomputed persistent image
+    precomputed_filepath = "./data/qm9/precomputed_qm9.h5" 
+    try:
+        with h5py.File(precomputed_filepath, 'r') as f:
+            print("key list", f.keys())
+            # try to load persistent images or morgan fingerprints
+            x_arr = f[desc][:]
+            y_arr = f["target"][:]
+            print(f"desc={desc}, target={target} loaded from {precomputed_filepath}")
+        # sample total * ratio rows
+        sample_rows = np.random.choice(x_arr.shape[0], size=int(x_arr.shape[0]*ratio), replace=False)
+        return x_arr[sample_rows, ...], y_arr[sample_rows, target_index]
+    except:
+        x_arr, y_arr = [], []
+        print("Cannot load from precomputed files, computing and saving to hdf5 files...")
+
+    # if no precomputed exists, precompute desc/target and save to hdf5 file
     files = os.listdir("./data/qm9/xyz/")
 
-    if ratio < 1:
-        files = random.sample(files, int(len(files) * ratio))
+    # if ratio < 1:
+    #     files = random.sample(files, int(len(files) * ratio))
 
     for ind, file in enumerate(tqdm(files)):
         file_full = "./data/qm9/xyz/" + file
@@ -189,10 +208,12 @@ def qm9(ratio=0.01, desc="morg", target="HOMO"):
                 file_obj = open(file_full)
                 _ = file_obj.readline()
                 target_str = file_obj.readline()
-                target = float(target_str.split()[target_index])
+                # instead of reading one target, storing all targets into array
+                # target = float(target_str.split()[target_index])
+                targets = [0] + [float(t) for t in target_str.split()[1:]]
 
                 x_arr.append(temp_persist)
-                y_arr.append(target)
+                y_arr.append(targets)
 
             except:
                 print(file)
@@ -209,8 +230,24 @@ def qm9(ratio=0.01, desc="morg", target="HOMO"):
             file_obj = open(file_full)
             _ = file_obj.readline()
             target_str = file_obj.readline()
-            target = float(target_str.split()[target_index])
-            x_arr.append(fingerprint_vect)
-            y_arr.append(target)
+            # instead of reading one target, storing all targets into array
+            # target = float(target_str.split()[target_index])
+            target = targets = [0] + [float(t) for t in target_str.split()[1:]]
+            targets = [0] + [float(t) for t in target_str.split()[1:]]
 
-    return x_arr, y_arr
+            x_arr.append(fingerprint_vect)
+            y_arr.append(targets)
+            
+
+    x_arr = np.array(x_arr)
+    y_arr = np.array(y_arr)
+    # save to hdf5 file
+    with h5py.File(precomputed_filepath, 'w') as f:
+        f.create_dataset(name=desc, data=x_arr)
+        f.create_dataset(name="target", data=y_arr)
+        print(f"Saved computed \"{desc}\" and \"all targets\" to \"{precomputed_filepath}\".")
+
+    # sample total * ratio rows
+    sample_rows = np.random.choice(x_arr.shape[0], size=int(x_arr.shape[0]*ratio), replace=False)
+
+    return x_arr[sample_rows, ...], y_arr[sample_rows, target_index]

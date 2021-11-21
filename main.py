@@ -70,7 +70,7 @@ if __name__ == "__main__":
         mat, target_val = qm9(ratio = ratio, desc = desc, target = target)
 
         # here mat is a list of ndarrays, maybe stack them to (#_of_data, 2500)?
-        mat = np.vstack(mat)
+        #mat = np.vstack(mat)
         target_val = np.vstack(target_val)
 
         scale = np.max(target_val) - np.min(target_val)
@@ -111,7 +111,7 @@ if __name__ == "__main__":
             mat = df["mat"].to_numpy()
 
         # here data is a ndarray in shape (581,) and each data[i] is ndarray with shape (2500,), prolly stack them into shape (581,2500)?
-        mat = np.vstack(mat)
+        #mat = np.vstack(mat)
         HOMO = np.vstack(HOMO)
         HOMO_1 = np.vstack(HOMO_1)
         diff = np.vstack(diff)

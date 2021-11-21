@@ -3,7 +3,7 @@ import tensorflow as tf
 import tensorflow.keras as keras
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.callbacks import TensorBoard, EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.layers import (
     Dense,
     MaxPooling2D,
@@ -15,7 +15,6 @@ from tensorflow.keras.layers import (
     GlobalAvgPool2D,
 )
 from tensorflow.keras.models import Sequential
-import matplotlib.pyplot as plt
 
 
 class ResidualUnit(keras.layers.Layer):
@@ -49,19 +48,20 @@ class ResidualUnit(keras.layers.Layer):
 
 
 def resnet34(x, y, scale, iter=150):
+    print("setting gpu options")
     from tensorflow.compat.v1 import ConfigProto
     from tensorflow.compat.v1 import InteractiveSession
 
     config = ConfigProto()
     config.gpu_options.allow_growth = True
     session = InteractiveSession(config=config)
-
+    print("seting input to list")
     try:
         x.shape
         x = x.tolist()
     except:
         pass
-
+    print("creating tensor")
     try:
         x = tf.convert_to_tensor(x.tolist())
         y = tf.convert_to_tensor(y.tolist())
@@ -146,6 +146,7 @@ def resnet34(x, y, scale, iter=150):
 
 
 def nn_basic(x, y, scale, iter=50):
+    print("setting gpu options")
     try:
         x.shape
         x = x.tolist()
@@ -176,26 +177,13 @@ def nn_basic(x, y, scale, iter=50):
     model.add(tf.keras.layers.BatchNormalization())
     model.add(tf.keras.layers.Dense(1024, activation="relu"))
 
-    # model.add(tf.keras.layers.Dense(2048, activation="relu"))
-    # model.add(tf.keras.layers.Dense(1024, activation="relu"))
-    # model.add(tf.keras.layers.Dense(512, activation="relu"))
-
     model.add(tf.keras.layers.Dense(1, activation="linear"))
     model.summary()
-    # tf.keras.layers.Dropout(0.2),
-    # tf.keras.layers.Dense(256),
-    # mse = tf.keras.losses.MeanSquaredError()
-    # mae = tf.keras.losses.MeanAverageError()
 
     # mae = tf.keras.losses.MAE()
     # rmse = tf.keras.losses.RMSE()
-    log_dir = "./logs/training/"
-    # tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-    # model.compile(optimizer='adam', loss=mse, metrics=[keras.metrics.mae])
     model.compile(optimizer="adam", loss="MSE", metrics=["MeanSquaredError", "MAE"])
     early_stop = EarlyStopping(monitor="loss", verbose=1, patience=10)
-    # tensorboard_cbk = TensorBoard(log_dir=log_dir)
-    # history = model.fit(x_train, y_train, epochs=10, callbacks=[tensorboard_callback])
     early_stop = EarlyStopping(monitor="loss", verbose=1, patience=10)
     history = model.fit(
         x_train, y_train, epochs=iter, validation_split=0.15, callbacks=[early_stop]
@@ -221,6 +209,8 @@ def nn_basic(x, y, scale, iter=50):
 
 
 def cnn_basic(x, y, scale, iter=50):
+    print("setting gpu options")
+
     from tensorflow.compat.v1 import ConfigProto
     from tensorflow.compat.v1 import InteractiveSession
 
@@ -319,6 +309,8 @@ def cnn_basic(x, y, scale, iter=50):
 
 
 def cnn_norm_basic(x, y, scale, iter=200):
+    print("setting gpu options")
+
     from tensorflow.compat.v1 import ConfigProto
     from tensorflow.compat.v1 import InteractiveSession
 

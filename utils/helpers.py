@@ -1,10 +1,14 @@
 import os
 import sys
-import pybel
+try:
+	from openbabel import pybel
+except:
+	import pybel
 import random
+import h5py
+import pandas as pd
 from tqdm import tqdm
-import numpy as np
-import tensorflow as tf
+
 
 from rdkit.Avalon import pyAvalonTools
 from rdkit.Chem import AllChem
@@ -13,10 +17,12 @@ from rdkit.Chem import SDMolSupplier
 from utils.sklearn_util import *
 from utils.Element_PI import VariancePersistv1
 
+import numpy as np
+import tensorflow as tf
 import tensorflow.keras as keras
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
-from tensorflow.keras.callbacks import TensorBoard, EarlyStopping
+from tensorflow.keras.callbacks import EarlyStopping
 from tensorflow.keras.layers import (
     Dense,
     MaxPooling2D,
@@ -28,7 +34,10 @@ from tensorflow.keras.layers import (
     GlobalAvgPool2D,
 )
 from tensorflow.keras.models import Sequential
-import matplotlib.pyplot as plt
+
+
+
+
 ##################################################################
 # Description of function:
 # A handler that take x, y matrices, along with scaling and trains algos
@@ -64,25 +73,30 @@ def calc(x, y, scale, algo="sgd"):
         reg = gaussian(x, y, scale)
 
     elif algo == "tf_nn":
+        from utils.tensorflow_util import nn_basic
+
         x = x.astype("float32")
         y = y.astype("float32")
+
         reg = nn_basic(x, y, scale)
-
     elif algo == "tf_cnn":
+        from utils.tensorflow_util import cnn_basic
 
         x = x.astype("float32")
         y = y.astype("float32")
+
         reg = cnn_basic(x, y, scale)
-
     elif algo == "tf_cnn_norm":
+        from utils.tensorflow_util import cnn_norm_basic
 
         x = x.astype("float32")
         y = y.astype("float32")
+
         reg = cnn_norm_basic(x, y, scale)
-
     elif algo == "resnet":
-        from tensorflow_util import resnet34
-
+        print("import")
+        from utils.tensorflow_util import resnet34
+        print("TRYING TO USE RESNET")
         x = x.astype("float32")
         y = y.astype("float32")
 
@@ -181,10 +195,27 @@ def qm9(ratio=0.01, desc="morg", target="HOMO"):
     else:
         print("invalid target specified")
 
+    # try to load precomputed persistent image
+    precomputed_filepath = "./data/qm9/precomputed_qm9.h5" 
+    try:
+        with h5py.File(precomputed_filepath, 'r') as f:
+            print("key list", f.keys())
+            # try to load persistent images or morgan fingerprints
+            x_arr = f[desc][:]
+            y_arr = f["target"][:]
+            print(f"desc={desc}, target={target} loaded from {precomputed_filepath}")
+        # sample total * ratio rows
+        sample_rows = np.random.choice(x_arr.shape[0], size=int(x_arr.shape[0]*ratio), replace=False)
+        return x_arr[sample_rows, ...], y_arr[sample_rows, target_index]
+    except:
+        x_arr, y_arr = [], []
+        print("Cannot load from precomputed files, computing and saving to hdf5 files...")
+
+    # if no precomputed exists, precompute desc/target and save to hdf5 file
     files = os.listdir("./data/qm9/xyz/")
 
-    if ratio < 1:
-        files = random.sample(files, int(len(files) * ratio))
+    # if ratio < 1:
+    #     files = random.sample(files, int(len(files) * ratio))
 
     for ind, file in enumerate(tqdm(files)):
         file_full = "./data/qm9/xyz/" + file
@@ -202,10 +233,12 @@ def qm9(ratio=0.01, desc="morg", target="HOMO"):
                 file_obj = open(file_full)
                 _ = file_obj.readline()
                 target_str = file_obj.readline()
-                target = float(target_str.split()[target_index])
+                # instead of reading one target, storing all targets into array
+                # target = float(target_str.split()[target_index])
+                targets = [0] + [float(t) for t in target_str.split()[1:]]
 
                 x_arr.append(temp_persist)
-                y_arr.append(target)
+                y_arr.append(targets)
 
             except:
                 print(file)
@@ -222,276 +255,24 @@ def qm9(ratio=0.01, desc="morg", target="HOMO"):
             file_obj = open(file_full)
             _ = file_obj.readline()
             target_str = file_obj.readline()
-            target = float(target_str.split()[target_index])
+            # instead of reading one target, storing all targets into array
+            # target = float(target_str.split()[target_index])
+            target = targets = [0] + [float(t) for t in target_str.split()[1:]]
+            targets = [0] + [float(t) for t in target_str.split()[1:]]
+
             x_arr.append(fingerprint_vect)
-            y_arr.append(target)
+            y_arr.append(targets)
+            
 
-    return x_arr, y_arr
+    x_arr = np.array(x_arr)
+    y_arr = np.array(y_arr)
+    # save to hdf5 file
+    with h5py.File(precomputed_filepath, 'w') as f:
+        f.create_dataset(name=desc, data=x_arr)
+        f.create_dataset(name="target", data=y_arr)
+        print(f"Saved computed \"{desc}\" and \"all targets\" to \"{precomputed_filepath}\".")
 
+    # sample total * ratio rows
+    sample_rows = np.random.choice(x_arr.shape[0], size=int(x_arr.shape[0]*ratio), replace=False)
 
-
-
-def nn_basic(x, y, scale, iter=50):
-    try:
-        x.shape
-        x = x.tolist()
-    except:
-        pass
-
-    try:
-        x = tf.convert_to_tensor(x.tolist())
-        y = tf.convert_to_tensor(y.tolist())
-        input_dim = np.shape(x[0])
-
-    except:
-        input_dim = len(x[0])
-
-    x = np.array(x)
-    y = np.array(y)
-
-    x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.1, random_state=42
-    )
-    print("Input vector size: " + str(input_dim))
-
-    model = tf.keras.models.Sequential()
-    model.add(tf.keras.Input(shape=(input_dim,)))
-
-    model.add(tf.keras.layers.Dense(1024, activation="relu"))
-    model.add(Dropout(0.25))
-    model.add(tf.keras.layers.BatchNormalization())
-    model.add(tf.keras.layers.Dense(1024, activation="relu"))
-
-    # model.add(tf.keras.layers.Dense(2048, activation="relu"))
-    # model.add(tf.keras.layers.Dense(1024, activation="relu"))
-    # model.add(tf.keras.layers.Dense(512, activation="relu"))
-
-    model.add(tf.keras.layers.Dense(1, activation="linear"))
-    model.summary()
-    # tf.keras.layers.Dropout(0.2),
-    # tf.keras.layers.Dense(256),
-    # mse = tf.keras.losses.MeanSquaredError()
-    # mae = tf.keras.losses.MeanAverageError()
-
-    # mae = tf.keras.losses.MAE()
-    # rmse = tf.keras.losses.RMSE()
-    log_dir = "./logs/training/"
-    # tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-    # model.compile(optimizer='adam', loss=mse, metrics=[keras.metrics.mae])
-    model.compile(optimizer="adam", loss="MSE", metrics=["MeanSquaredError", "MAE"])
-    early_stop = EarlyStopping(monitor="loss", verbose=1, patience=10)
-    # tensorboard_cbk = TensorBoard(log_dir=log_dir)
-    # history = model.fit(x_train, y_train, epochs=10, callbacks=[tensorboard_callback])
-    early_stop = EarlyStopping(monitor="loss", verbose=1, patience=10)
-    history = model.fit(
-        x_train, y_train, epochs=iter, validation_split=0.15, callbacks=[early_stop]
-    )
-
-    ret = model.evaluate(x_test, y_test, verbose=1)
-    print(history.history.keys())
-    plt.plot(history.history["loss"][2:-1], label="Training Loss")
-    plt.plot(history.history["val_loss"][2:-1], label="Validation Loss")
-    plt.legend()
-
-    score = str(mean_squared_error(model.predict(x_test), y_test))
-    print("MSE score:   " + str(score))
-    score = str(mean_absolute_error(model.predict(x_test), y_test))
-    print("MAE score:   " + str(score))
-    score = str(r2_score(model.predict(x_test), y_test))
-    print("r2 score:   " + str(score))
-    score_mae = mean_absolute_error(model.predict(x_test), y_test)
-    print("scaled MAE")
-    print(scale * score_mae)
-
-    return model
-
-
-def cnn_basic(x, y, scale, iter=50):
-    from tensorflow.compat.v1 import ConfigProto
-    from tensorflow.compat.v1 import InteractiveSession
-
-    config = ConfigProto()
-    config.gpu_options.allow_growth = True
-    session = InteractiveSession(config=config)
-
-    try:
-        x.shape
-        x = x.tolist()
-    except:
-        pass
-
-    try:
-        x = tf.convert_to_tensor(x.tolist())
-        y = tf.convert_to_tensor(y.tolist())
-        input_dim = np.shape(x[0])
-
-    except:
-        input_dim = len(x[0])
-
-    x = np.array(x)
-    y = np.array(y)
-
-    dim_persist = int(np.shape(x)[1] ** 0.5)
-    x = x.reshape((np.shape(x)[0], dim_persist, dim_persist))
-    x = np.expand_dims(x, -1)
-    print(np.shape(x))
-
-    samples = int(np.shape(x)[0])
-
-    x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.1, random_state=42
-    )
-    print("Input vector size: " + str(input_dim))
-    model = Sequential()
-
-    model.add(
-        Conv2D(
-            filters=64,
-            kernel_size=3,
-            activation="relu",
-            input_shape=(dim_persist, dim_persist, 1),
-            strides=1,
-            data_format="channels_last",
-        )
-    )
-    model.add(MaxPooling2D(pool_size=2))
-
-    model.add(
-        Conv2D(
-            filters=32,
-            kernel_size=2,
-            activation="relu",
-            strides=1,
-            data_format="channels_last",
-        )
-    )
-    model.add(MaxPooling2D(pool_size=2))
-    model.add(Flatten())
-    model.add(Dense(512, activation="relu"))
-    model.add(Dropout(0.5))
-    model.add(Dense(1, activation="linear"))
-
-    model.summary()
-    # mae = tf.keras.losses.MAE()
-    # rmse = tf.keras.losses.RMSE()
-    log_dir = "./logs/training/"
-    # tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
-    # model.compile(optimizer='adam', loss=mse, metrics=[keras.metrics.mae])
-    model.compile(optimizer="adam", loss="MSE", metrics=["MeanSquaredError", "MAE"])
-
-    # tensorboard_cbk = TensorBoard(log_dir=log_dir)
-    history = model.fit(x_train, y_train, epochs=iter, validation_split=0.15)
-    ret = model.evaluate(x_test, y_test, verbose=2)
-
-    print(history.history.keys())
-    plt.plot(history.history["loss"][2:-1], label="Training Loss")
-    plt.plot(history.history["val_loss"][2:-1], label="Validation Loss")
-    plt.legend()
-
-    score = str(mean_squared_error(model.predict(x_test), y_test))
-    print("MSE score:   " + str(score))
-
-    score = str(mean_absolute_error(model.predict(x_test), y_test))
-    print("MAE score:   " + str(score))
-
-    score = str(r2_score(model.predict(x_test), y_test))
-    print("r2 score:   " + str(score))
-
-    score_mae = mean_absolute_error(model.predict(x_test), y_test)
-    print("scaled MAE")
-    print(scale * score_mae)
-
-    return model
-
-
-def cnn_norm_basic(x, y, scale, iter=200):
-    from tensorflow.compat.v1 import ConfigProto
-    from tensorflow.compat.v1 import InteractiveSession
-
-    config = ConfigProto()
-    config.gpu_options.allow_growth = True
-    session = InteractiveSession(config=config)
-
-    try:
-        x.shape
-        x = x.tolist()
-    except:
-        pass
-
-    try:
-        x = tf.convert_to_tensor(x.tolist())
-        y = tf.convert_to_tensor(y.tolist())
-        input_dim = np.shape(x[0])
-
-    except:
-        input_dim = len(x[0])
-
-    x = np.array(x)
-    y = np.array(y)
-
-    dim_persist = int(np.shape(x)[1] ** 0.5)
-    x = x.reshape((np.shape(x)[0], dim_persist, dim_persist))
-    x = np.expand_dims(x, -1)
-    print(np.shape(x))
-
-    samples = int(np.shape(x)[0])
-
-    x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.1, random_state=42
-    )
-    print("Input vector size: " + str(input_dim))
-    model = Sequential()
-
-    model.add(
-        Conv2D(
-            filters=64,
-            kernel_size=3,
-            input_shape=(dim_persist, dim_persist, 1),
-            strides=1,
-            data_format="channels_last",
-        )
-    )
-    # model.add(BatchNormalization())
-    model.add(Activation("relu"))
-    model.add(MaxPooling2D(pool_size=2))
-
-
-    model.add(Conv2D(filters=64, kernel_size=3, strides=1, data_format="channels_last"))
-    model.add(BatchNormalization())
-
-    model.add(Activation("relu"))
-    model.add(MaxPooling2D(pool_size=2))
-
-    model.add(Flatten())
-    model.add(Dropout(0.5))
-
-    model.add(Dense(128, activation="relu"))
-    model.add(Dropout(0.5))
-
-    model.add(Dense(1, activation="linear"))
-
-    model.summary()
-    log_dir = "./logs/training/"
-    model.compile(optimizer="adam", loss="MSE", metrics=["MeanSquaredError", "MAE"])
-
-    history = model.fit(x_train, y_train, epochs=iter, validation_split=0.15)
-    ret = model.evaluate(x_test, y_test, verbose=2)
-    print(history.history.keys())
-    plt.plot(history.history["loss"][2:-1], label="Training Loss")
-    plt.plot(history.history["val_loss"][2:-1], label="Validation Loss")
-    plt.legend()
-
-    score = str(mean_squared_error(model.predict(x_test), y_test))
-    print("MSE score:   " + str(score))
-
-    score = str(mean_absolute_error(model.predict(x_test), y_test))
-    print("MAE score:   " + str(score))
-
-    score = str(r2_score(model.predict(x_test), y_test))
-    print("r2 score:   " + str(score))
-
-    score_mae = mean_absolute_error(model.predict(x_test), y_test)
-    print("scaled MAE")
-    print(scale * score_mae)
-
-    return model
+    return x_arr[sample_rows, ...], y_arr[sample_rows, target_index]

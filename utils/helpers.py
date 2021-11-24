@@ -25,6 +25,7 @@ from utils.sklearn_util import *
 from utils.Element_PI import VariancePersistv1
 
 import numpy as np
+import matplotlib.pyplot as plt
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 from sklearn.model_selection import train_test_split
 
@@ -88,6 +89,16 @@ def calc(x, y, scale, algo="sgd"):
         y = y.astype("float32")
 
         reg = resnet34(x, y, scale)
+
+    elif algo == "alexnet":
+        print("import")
+        from utils.tensorflow_util import alexnet
+        print("TRYING TO USE AlexNet")
+        x = x.astype("float32")
+        y = y.astype("float32")
+
+        reg = alexnet(x, y, scale)
+
     else:
         print("stochastic gradient descent selected")
         reg = sgd(x, y, scale)

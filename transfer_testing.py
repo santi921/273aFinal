@@ -43,6 +43,5 @@ if __name__ == "__main__":
     scale = np.max(HOMO) - np.min(HOMO)
     target_val = (HOMO - np.min(HOMO)) / scale
 
-
-    reg_model_qm9
-    score = str(r2_score(reg_model_qm9.predict(scale), target_val))
+    score = r2_score(reg_model_qm9.predict(target_val), HOMO)
+    print(score)

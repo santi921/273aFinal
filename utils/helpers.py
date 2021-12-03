@@ -382,7 +382,7 @@ def cnn_basic(x, y, scale, iter=50):
     model.add(
         Conv2D(
             filters=64,
-            kernel_size=3,
+            kernel_size=2,
             activation="relu",
             input_shape=(dim_persist, dim_persist, 1),
             strides=1,

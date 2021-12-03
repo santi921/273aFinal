@@ -266,7 +266,9 @@ def qm9(ratio=0.01, desc="morg", target="HOMO"):
     x_arr = np.array(x_arr)
     y_arr = np.array(y_arr)
     # save to hdf5 file
-    df = pd.DataFrame(np.array(x_arr, y_arr), columns = ['mat', 'homo'])
+    #df = pd.DataFrame(np.array(x_arr, y_arr), columns = ['mat', 'homo'])
+    df = pd.DataFrame({'mat': x_arr, 'images': list(y_arr)}, columns=['mat', 'homo'])
+
     df.to_hdf(precomputed_filepath)
 
     # sample total * ratio rows

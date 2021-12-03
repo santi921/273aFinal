@@ -31,7 +31,8 @@ if __name__ == "__main__":
     reg_model_qm9 = calc(mat, target_val, scale, algo)
 
 
-    str = "./data/desc/DB3/desc_calc_DB3_persist.h5" #<---------------------swap these
+    str = "./data/desc/DB3/desc_calc_DB3_persist.h5"
+    #<---------------------swap these
     df = pd.read_hdf(str)
 
     df_subset = df[['HOMO', "HOMO-1", "diff", "mat"]].sample(n=int(10000), random_state=1)

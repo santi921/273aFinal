@@ -19,6 +19,7 @@ try:
 	from openbabel import pybel
 except:
 	import pybel
+import pandas as pd
 import h5py
 from tqdm import tqdm
 from utils.sklearn_util import *
@@ -265,10 +266,8 @@ def qm9(ratio=0.01, desc="morg", target="HOMO"):
     x_arr = np.array(x_arr)
     y_arr = np.array(y_arr)
     # save to hdf5 file
-    with h5py.File(precomputed_filepath, 'w') as f:
-        f.create_dataset(name=desc, data=x_arr)
-        f.create_dataset(name="target", data=y_arr)
-        print(f"Saved computed \"{desc}\" and \"all targets\" to \"{precomputed_filepath}\".")
+    df = pd.DataFrame(np.array(x_arr, y_arr), columns = ['mat', 'homo'])
+    df.to_hdf(precomputed_filepath)
 
     # sample total * ratio rows
     sample_rows = np.random.choice(x_arr.shape[0], size=int(x_arr.shape[0]*ratio), replace=False)

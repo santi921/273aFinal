@@ -15,7 +15,7 @@ if __name__ == "__main__":
     target = "homo"
     algo = "tf_cnn"
     desc = "persist"
-    ratio = float(10000)
+    ratio = float(1000)
 
     print("dataset:\t\t" + dataset)
     print("descriptor:\t\t" + desc)
@@ -34,7 +34,7 @@ if __name__ == "__main__":
     str = "./data/desc/DB3/desc_calc_DB3_persist.h5" #<---------------------swap these
     df = pd.read_hdf(str)
 
-    df_subset = df[['HOMO', "HOMO-1", "diff", "mat"]].sample(n=int(10000 * df.shape[0]), random_state=1)
+    df_subset = df[['HOMO', "HOMO-1", "diff", "mat"]].sample(n=int(10000), random_state=1)
     HOMO = df_subset["HOMO"].to_numpy()
     mat = df_subset["mat"].to_numpy()
     HOMO = np.vstack(HOMO)
